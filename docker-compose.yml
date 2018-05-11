@@ -1,0 +1,44 @@
+version: '2.1'
+services:
+  mysql:
+    image: mysql:5.7
+    healthcheck:
+      test: "mysql --user=market_user --password=password -D market_data -e \"select * from press_releases;\""
+      interval: 2s
+      timeout: 1s
+      retries: 20
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: market_data
+      MYSQL_USER: market_user
+      MYSQL_PASSWORD: password
+    volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      market_network:
+
+  crawler:
+    image: node:10
+    env_file: .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    healthcheck:
+      test: "curl --fail http://localhost:8080/health || exit 1"
+      interval: 2s
+      timeout: 1s
+      retries: 20
+    volumes:
+      - ./crawler:/opt/app
+    working_dir: /opt/app
+    entrypoint: npm start
+    networks:
+      market_network:
+
+networks:
+  market_network:
+      external:
+        name: market_network

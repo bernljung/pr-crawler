@@ -1,6 +1,7 @@
-var Crawler = require('crawler');
+const Crawler = require('crawler');
 
-const DOMAIN = 'https://www.avanza.se'
+const DOMAIN = process.env.CRAWLER_DOMAIN
+const INITIAL_URL = process.env.CRAWLER_INITIAL_URL
 
 var c = new Crawler({
     maxConnections : 1,
@@ -67,7 +68,18 @@ const individualPMCallback = (error, res, done) => {
 }
 
 c.queue([{
-    uri: DOMAIN + '/placera/pressmeddelanden.html',
+    uri: INITIAL_URL,
     jQuery: true,
     callback: startPageCallback
 }]);
+
+
+// Dummy for health check in docker upstart
+const http = require('http')
+const server = http.createServer((request, response) => {
+  response.writeHead(200, {"Content-Type": 'application/json'})
+  response.write('hello');
+  response.end()
+});
+
+server.listen(8080)
