@@ -4,10 +4,13 @@ class Queuer {
   constructor(params) {
     this.domain = params.domain
     this.initialUrl = params.initialUrl
+    this.dbmanager = params.dbManager
     this.crawler = new Crawler({
+      rateLimit: 200,
       maxConnections : 1,
       callback : this.crawlerCallback.bind(this)
     });
+    this.counter = 0
   }
 
   crawlerCallback(error, res, done) {
@@ -19,12 +22,11 @@ class Queuer {
         // TODO: add link to mysql table
         // TODO: refactor this
         const pressReleaseLink = $(item).attr('href')
-        console.log(pressReleaseLink)
-        // this.crawler.queue([{
-        //   uri: this.domain + pressReleaseLink,
-        //   jQuery: true,
-        //   callback: individualPMCallback
-        // }]);
+        const site = {
+          url: this.domain + pressReleaseLink,
+          prio: ++this.counter
+        }
+        this.dbmanager.queueUrl(site)
       })
 
       const viewMoreLink = $('.viewMoreLinkSecond.getMoreFeedArticlesLink').attr('href')
@@ -46,12 +48,11 @@ class Queuer {
         // TODO: add link to mysql table
         // TODO: refactor this
         const pressReleaseLink = $(item).attr('href')
-        console.log(pressReleaseLink)
-        // this.crawler.queue([{
-        //   uri: this.domain + pressReleaseLink,
-        //   jQuery: true,
-        //   callback: individualPMCallback
-        // }]);
+        const site = {
+          url: this.domain + pressReleaseLink,
+          prio: ++this.counter
+        }
+        this.dbmanager.queueUrl(site)
       })
 
       const viewMoreLink = $('#ajax-data').attr('data-more-link')

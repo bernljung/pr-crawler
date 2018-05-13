@@ -1,5 +1,6 @@
 const http = require('http')
 const Queuer = require('./modules/queuer')
+const DBManager = require('./modules/dbmanager')
 
 const healthCheckServer = http.createServer((request, response) => {
   response.writeHead(200, {"Content-Type": 'application/json'})
@@ -7,9 +8,18 @@ const healthCheckServer = http.createServer((request, response) => {
   response.end()
 });
 
+const dbManager = new DBManager({
+  host: process.env.CRAWLER_DATABASE_HOST,
+  connectionLimit: process.env.CRAWLER_DATABASE_CONNECTION_LIMIT,
+  user: process.env.CRAWLER_DATABASE_USER,
+  password: process.env.CRAWLER_DATABASE_PASSWORD,
+  database: process.env.CRAWLER_DATABASE_DATABASE
+})
+
 const queuer = new Queuer({
   domain: process.env.CRAWLER_DOMAIN,
-  initialUrl: process.env.CRAWLER_INITIAL_URL
+  initialUrl: process.env.CRAWLER_INITIAL_URL,
+  dbManager: dbManager
 })
 
 // const individualPMCallback = (error, res, done) => {
@@ -25,9 +35,10 @@ const queuer = new Queuer({
 
 const startApplication = async ()=>{
   try {
+    console.log('DB Manager starting...')
+    await dbManager.start()
     console.log('Queuer starting...')
     await queuer.start()
-    console.log('Queuer start complete')
     console.log('Starting health check...')
     healthCheckServer.listen(8080)
     console.log('Application up and running')
