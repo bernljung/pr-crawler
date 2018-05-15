@@ -1,5 +1,6 @@
 const http = require('http')
 const Queuer = require('./modules/queuer')
+const SiteCrawler = require('./modules/site-crawler')
 const DBManager = require('./modules/dbmanager')
 
 const healthCheckServer = http.createServer((request, response) => {
@@ -13,7 +14,8 @@ const dbManager = new DBManager({
   connectionLimit: process.env.CRAWLER_DATABASE_CONNECTION_LIMIT,
   user: process.env.CRAWLER_DATABASE_USER,
   password: process.env.CRAWLER_DATABASE_PASSWORD,
-  database: process.env.CRAWLER_DATABASE_DATABASE
+  database: process.env.CRAWLER_DATABASE_DATABASE,
+  queueBatchSize: parseInt(process.env.CRAWLER_QUEUE_BATCH_SIZE)
 })
 
 const queuer = new Queuer({
@@ -22,23 +24,17 @@ const queuer = new Queuer({
   dbManager: dbManager
 })
 
-// const individualPMCallback = (error, res, done) => {
-//   if (error) {
-//     console.log('individualPmCallback error:', error)
-//   } else {
-//     const $ = res.$;
-//     const companyName = $("article.feedArticle h1.SText div.upperCase.bold").text()
-//     console.log("Company name: ", companyName)
-//   }
-//   done()
-// }
+const siteCrawler = new SiteCrawler({
+  dbManager: dbManager
+})
 
 const startApplication = async ()=>{
   try {
     console.log('DB Manager starting...')
     await dbManager.start()
     console.log('Queuer starting...')
-    await queuer.start()
+    // await queuer.start()
+    await siteCrawler.start()
     console.log('Starting health check...')
     healthCheckServer.listen(8080)
     console.log('Application up and running')
